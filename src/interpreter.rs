@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::io::Result;
 use std::io;
+use std::io::Stdout;
 use std::io::Write;
 use std::ops::Add;
 use std::ops::Div;
@@ -35,18 +36,18 @@ pub struct Function {
     code: Vec<String>,
 }
 
-pub struct Interpreter {
+pub struct Interpreter<T: Write> {
     variables: HashMap<String, i32>,
     arrays: HashMap<String, Vec<i32>>,
     strings: HashMap<String, String>,
     float: HashMap<String, f32>,
     functions: HashMap<String, Function>,
     structs: HashMap<String, HashMap<String, i32>>,
-    output_stream: Box<dyn Write>
+    output_stream: T
 }
 
-impl Interpreter {
-    pub fn new() -> Self {
+impl Interpreter<Stdout> {
+    pub fn new() -> Interpreter<io::Stdout> {
         Interpreter {
             variables: HashMap::new(),
             arrays: HashMap::new(),
@@ -54,11 +55,13 @@ impl Interpreter {
             float: HashMap::new(),
             functions: HashMap::new(),
             structs: HashMap::new(),
-            output_stream: Box::new(io::stdout())
+            output_stream: io::stdout()
         }
     }
+}
 
-    pub fn new_with_output_stream(output_stream: impl Write + 'static) -> Self{
+impl<T: Write> Interpreter<T> {
+    pub fn new_with_output_stream(output_stream: T) -> Self {
         Interpreter {
             variables: HashMap::new(),
             arrays: HashMap::new(),
@@ -66,11 +69,11 @@ impl Interpreter {
             float: HashMap::new(),
             functions: HashMap::new(),
             structs: HashMap::new(),
-            output_stream: Box::new(output_stream)
+            output_stream: output_stream
         }
     }
 
-    pub fn run(&mut self, source_code: &str) -> Result<()> {
+    pub fn run(&mut self, source_code: &str) -> Result<&T> {
         let mut source = source_code.split_whitespace();
         while let Some(word) = source.next() {
             match word {
@@ -474,7 +477,7 @@ impl Interpreter {
             }
         }
 
-        Ok(())
+        Ok(self.output_stream.by_ref())
     }
     pub fn call_function(&mut self, name: &str, parameters: &[i32]) -> Result<()> {
         let function = self.functions.get(name).unwrap();
