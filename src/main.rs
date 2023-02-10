@@ -1,8 +1,6 @@
 use my_project::interpreter::Interpreter;
-use std::env;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env::set_var("RUST_BACKTRACE", "1");
     println!("Hello, world!");
 
     let mut interpreter = Interpreter::new();
