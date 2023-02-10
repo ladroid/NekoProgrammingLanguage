@@ -1,35 +1,13 @@
+use crate::lexeme::{Lexeme, Comparison};
 use std::collections::HashMap;
-use std::io::Result;
 use std::io;
+use std::io::Result;
 use std::io::Stdout;
 use std::io::Write;
 use std::ops::Add;
 use std::ops::Div;
 use std::ops::Mul;
 use std::ops::Sub;
-
-pub enum Comparison {
-    Equal,
-    NotEqual,
-    LessThan,
-    LessThanOrEqual,
-    GreaterThan,
-    GreaterThanOrEqual,
-}
-
-impl Comparison {
-    pub fn from_str(s: &str) -> Self {
-        match s {
-            "==" => Comparison::Equal,
-            "!=" => Comparison::NotEqual,
-            "<" => Comparison::LessThan,
-            "<=" => Comparison::LessThanOrEqual,
-            ">" => Comparison::GreaterThan,
-            ">=" => Comparison::GreaterThanOrEqual,
-            _ => panic!("Invalid comparison operator: {}", s),
-        }
-    }
-}
 
 pub struct Function {
     parameters: Vec<String>,
@@ -43,7 +21,7 @@ pub struct Interpreter<T: Write> {
     float: HashMap<String, f32>,
     functions: HashMap<String, Function>,
     structs: HashMap<String, HashMap<String, i32>>,
-    output_stream: T
+    output_stream: T,
 }
 
 impl Interpreter<Stdout> {
@@ -55,7 +33,7 @@ impl Interpreter<Stdout> {
             float: HashMap::new(),
             functions: HashMap::new(),
             structs: HashMap::new(),
-            output_stream: io::stdout()
+            output_stream: io::stdout(),
         }
     }
 }
@@ -69,20 +47,21 @@ impl<T: Write> Interpreter<T> {
             float: HashMap::new(),
             functions: HashMap::new(),
             structs: HashMap::new(),
-            output_stream: output_stream
+            output_stream: output_stream,
         }
     }
 
     pub fn run(&mut self, source_code: &str) -> Result<&T> {
         let mut source = source_code.split_whitespace();
         while let Some(word) = source.next() {
-            match word {
-                "var" => {
+            let keyword = Lexeme::from_str(word);
+            match keyword {
+                Lexeme::Var => {
                     let name = source.next().unwrap();
                     let value = source.next().unwrap().parse().unwrap();
                     self.variables.insert(name.to_owned(), value);
                 }
-                "array" => {
+                Lexeme::Array => {
                     let name = source.next().unwrap();
                     let size = source.next().unwrap().parse().unwrap();
                     let mut array = Vec::with_capacity(size);
@@ -92,7 +71,7 @@ impl<T: Write> Interpreter<T> {
                     }
                     self.arrays.insert(name.to_owned(), array);
                 }
-                "string" => {
+                Lexeme::String => {
                     let name = source.next().unwrap();
                     let mut value = String::new();
                     while let Some(word) = source.next() {
@@ -105,12 +84,12 @@ impl<T: Write> Interpreter<T> {
                     value.pop();
                     self.strings.insert(name.to_owned(), value);
                 }
-                "float" => {
+                Lexeme::Float => {
                     let name = source.next().unwrap();
                     let value = source.next().unwrap().parse().unwrap();
                     self.float.insert(name.to_owned(), value);
                 }
-                "function" => {
+                Lexeme::Function => {
                     let name = source.next().unwrap();
                     let mut function = vec![];
                     let mut parameters = vec![];
@@ -155,7 +134,7 @@ impl<T: Write> Interpreter<T> {
                         },
                     );
                 }
-                "struct" => {
+                Lexeme::Struct => {
                     let name = source.next().unwrap();
                     let mut struct_fields = HashMap::new();
                     while let Some(field) = source.next() {
@@ -167,14 +146,18 @@ impl<T: Write> Interpreter<T> {
                     }
                     self.structs.insert(name.to_owned(), struct_fields);
                 }
-                "print" => {
+                Lexeme::Print => {
                     let name = source.next().unwrap();
                     match self.variables.get(name) {
                         Some(value) => writeln!(self.output_stream, "{}", value)?,
                         None => match self.arrays.get(name) {
                             Some(array) => {
                                 for (index, &value) in array.iter().enumerate() {
-                                    writeln!(self.output_stream, "{}[{}] = {}", name, index, value)?;
+                                    writeln!(
+                                        self.output_stream,
+                                        "{}[{}] = {}",
+                                        name, index, value
+                                    )?;
                                 }
                             }
                             None => match self.float.get(name) {
@@ -182,7 +165,11 @@ impl<T: Write> Interpreter<T> {
                                 None => match self.structs.get(name) {
                                     Some(_struct) => {
                                         for (key, value) in _struct.iter() {
-                                            writeln!(self.output_stream, "{}.{} = {}", name, key, value)?;
+                                            writeln!(
+                                                self.output_stream,
+                                                "{}.{} = {}",
+                                                name, key, value
+                                            )?;
                                         }
                                     }
                                     None => writeln!(self.output_stream, "{}", self.strings[name])?,
@@ -191,7 +178,7 @@ impl<T: Write> Interpreter<T> {
                         },
                     }
                 }
-                "call" => {
+                Lexeme::Call => {
                     // let name = source.next().unwrap();
                     // let function = &self.functions[name];
                     // let parameters = &function.parameters;
@@ -236,7 +223,7 @@ impl<T: Write> Interpreter<T> {
                         }
                     }
                 }
-                "if" => {
+                Lexeme::If => {
                     let name = source.next().unwrap();
                     let comp = Comparison::from_str(source.next().unwrap());
                     let value = source.next().unwrap().parse().unwrap();
@@ -313,7 +300,11 @@ impl<T: Write> Interpreter<T> {
                                         }
                                         "print" => {
                                             let name = source.next().unwrap();
-                                            writeln!(self.output_stream, "{}", self.variables[name])?;
+                                            writeln!(
+                                                self.output_stream,
+                                                "{}",
+                                                self.variables[name]
+                                            )?;
                                         }
                                         "add" => {
                                             let name1 = source.next().unwrap();
@@ -352,7 +343,7 @@ impl<T: Write> Interpreter<T> {
                         }
                     }
                 }
-                "loop" => {
+                Lexeme::Loop => {
                     let name = source.next().unwrap();
                     let comp = Comparison::from_str(source.next().unwrap());
                     let value = source.next().unwrap().parse().unwrap();
@@ -408,71 +399,71 @@ impl<T: Write> Interpreter<T> {
                         }
                     }
                 }
-                "add" => {
+                Lexeme::Add => {
                     let name1 = source.next().unwrap();
                     let name2 = source.next().unwrap();
                     let result = self.variables[name1].add(self.variables[name2]);
                     self.variables.insert(name1.to_owned(), result);
                 }
-                "sub" => {
+                Lexeme::Sub => {
                     let name1 = source.next().unwrap();
                     let name2 = source.next().unwrap();
                     let result = self.variables[name1].sub(self.variables[name2]);
                     self.variables.insert(name1.to_owned(), result);
                 }
-                "mul" => {
+                Lexeme::Mul => {
                     let name1 = source.next().unwrap();
                     let name2 = source.next().unwrap();
                     let result = self.variables[name1].mul(self.variables[name2]);
                     self.variables.insert(name1.to_owned(), result);
                 }
-                "div" => {
+                Lexeme::Div => {
                     let name1 = source.next().unwrap();
                     let name2 = source.next().unwrap();
                     let result = self.variables[name1].div(self.variables[name2]);
                     self.variables.insert(name1.to_owned(), result);
                 }
-                "add_f" => {
+                Lexeme::AddF => {
                     let name1 = source.next().unwrap();
                     let name2 = source.next().unwrap();
                     let result = self.float[name1].add(self.float[name2]);
                     self.float.insert(name1.to_owned(), result);
                 }
-                "sub_f" => {
+                Lexeme::SubF => {
                     let name1 = source.next().unwrap();
                     let name2 = source.next().unwrap();
                     let result = self.float[name1].sub(self.float[name2]);
                     self.float.insert(name1.to_owned(), result);
                 }
-                "mul_f" => {
+                Lexeme::MulF => {
                     let name1 = source.next().unwrap();
                     let name2 = source.next().unwrap();
                     let result = self.float[name1].mul(self.float[name2]);
                     self.float.insert(name1.to_owned(), result);
                 }
-                "div_f" => {
+                Lexeme::DivF => {
                     let name1 = source.next().unwrap();
                     let name2 = source.next().unwrap();
                     let result = self.float[name1].div(self.float[name2]);
                     self.float.insert(name1.to_owned(), result);
                 }
-                "sqrt" => {
+                Lexeme::Sqrt => {
                     let name = source.next().unwrap();
                     self.variables
                         .insert(name.to_owned(), (self.variables[name] as f32).sqrt() as i32);
                 }
-                "abs" => {
+                Lexeme::ABS => {
                     let name = source.next().unwrap();
                     self.variables
                         .insert(name.to_owned(), self.variables[name].abs());
                 }
-                "pow" => {
+                Lexeme::POW => {
                     let name1 = source.next().unwrap();
                     let name2 = source.next().unwrap();
                     let result = self.variables[name1].pow(self.variables[name2] as u32);
                     self.variables.insert(name1.to_owned(), result);
                 }
-                "end" => {}
+                Lexeme::End => {}
                 _ => panic!("Unknown command: {}", word),
             }
         }
