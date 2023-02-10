@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use std::io::Result;
+use std::io;
+use std::io::Write;
 use std::ops::Add;
 use std::ops::Div;
 use std::ops::Mul;
@@ -39,6 +42,7 @@ pub struct Interpreter {
     float: HashMap<String, f32>,
     functions: HashMap<String, Function>,
     structs: HashMap<String, HashMap<String, i32>>,
+    output_stream: Box<dyn Write>
 }
 
 impl Interpreter {
@@ -50,10 +54,23 @@ impl Interpreter {
             float: HashMap::new(),
             functions: HashMap::new(),
             structs: HashMap::new(),
+            output_stream: Box::new(io::stdout())
         }
     }
 
-    pub fn run(&mut self, source_code: &str) {
+    pub fn new_with_output_stream(output_stream: impl Write + 'static) -> Self{
+        Interpreter {
+            variables: HashMap::new(),
+            arrays: HashMap::new(),
+            strings: HashMap::new(),
+            float: HashMap::new(),
+            functions: HashMap::new(),
+            structs: HashMap::new(),
+            output_stream: Box::new(output_stream)
+        }
+    }
+
+    pub fn run(&mut self, source_code: &str) -> Result<()> {
         let mut source = source_code.split_whitespace();
         while let Some(word) = source.next() {
             match word {
@@ -106,7 +123,7 @@ impl Interpreter {
                                 match word {
                                     "print" => {
                                         let name = source.next().unwrap();
-                                        println!("{}", self.variables[name]);
+                                        writeln!(self.output_stream, "{}", self.variables[name])?;
                                     }
                                     "var" => {
                                         let name = source.next().unwrap();
@@ -150,22 +167,22 @@ impl Interpreter {
                 "print" => {
                     let name = source.next().unwrap();
                     match self.variables.get(name) {
-                        Some(value) => println!("{}", value),
+                        Some(value) => writeln!(self.output_stream, "{}", value)?,
                         None => match self.arrays.get(name) {
                             Some(array) => {
                                 for (index, &value) in array.iter().enumerate() {
-                                    println!("{}[{}] = {}", name, index, value);
+                                    writeln!(self.output_stream, "{}[{}] = {}", name, index, value)?;
                                 }
                             }
                             None => match self.float.get(name) {
-                                Some(value) => println!("{}", value),
+                                Some(value) => writeln!(self.output_stream, "{}", value)?,
                                 None => match self.structs.get(name) {
                                     Some(_struct) => {
                                         for (key, value) in _struct.iter() {
-                                            println!("{}.{} = {}", name, key, value);
+                                            writeln!(self.output_stream, "{}.{} = {}", name, key, value)?;
                                         }
                                     }
-                                    None => println!("{}", self.strings[name]),
+                                    None => writeln!(self.output_stream, "{}", self.strings[name])?,
                                 },
                             },
                         },
@@ -205,7 +222,7 @@ impl Interpreter {
                             }
                             "print" => {
                                 let name = source.next().unwrap();
-                                println!("{}", self.variables[&name]);
+                                writeln!(self.output_stream, "{}", self.variables[&name])?;
                             }
                             "add" => {
                                 let name1 = source.next().unwrap();
@@ -245,7 +262,7 @@ impl Interpreter {
                                 }
                                 "print" => {
                                     let name = source.next().unwrap();
-                                    println!("{}", self.variables[name]);
+                                    writeln!(self.output_stream, "{}", self.variables[name])?;
                                 }
                                 "add" => {
                                     let name1 = source.next().unwrap();
@@ -293,7 +310,7 @@ impl Interpreter {
                                         }
                                         "print" => {
                                             let name = source.next().unwrap();
-                                            println!("{}", self.variables[name]);
+                                            writeln!(self.output_stream, "{}", self.variables[name])?;
                                         }
                                         "add" => {
                                             let name1 = source.next().unwrap();
@@ -357,7 +374,7 @@ impl Interpreter {
                                 }
                                 "print" => {
                                     let name = inner_source.next().unwrap();
-                                    println!("{}", self.variables[name]);
+                                    writeln!(self.output_stream, "{}", self.variables[name])?;
                                 }
                                 "add" => {
                                     let name1 = inner_source.next().unwrap();
@@ -456,8 +473,10 @@ impl Interpreter {
                 _ => panic!("Unknown command: {}", word),
             }
         }
+
+        Ok(())
     }
-    pub fn call_function(&mut self, name: &str, parameters: &[i32]) {
+    pub fn call_function(&mut self, name: &str, parameters: &[i32]) -> Result<()> {
         let function = self.functions.get(name).unwrap();
         let mut interpreter = Interpreter::new();
         for (param_name, param_value) in function.parameters.iter().zip(parameters) {
@@ -465,6 +484,8 @@ impl Interpreter {
                 .variables
                 .insert(param_name.to_owned(), *param_value);
         }
-        interpreter.run(&function.code.join(" "));
+        interpreter.run(&function.code.join(" "))?;
+
+        Ok(())
     }
 }

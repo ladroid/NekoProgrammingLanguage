@@ -1,16 +1,16 @@
 use my_project::interpreter::Interpreter;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Hello, world!");
 
     let mut interpreter = Interpreter::new();
-    interpreter.run("var x 10 print x");
+    interpreter.run("var x 10 print x")?;
 
     let mut interpreter1 = Interpreter::new();
-    interpreter1.run("var x 10 if x == 10 print x"); // var x 10 if x 10 var y 20 else var y 30 end print y
+    interpreter1.run("var x 10 if x == 10 print x")?; // var x 10 if x 10 var y 20 else var y 30 end print y
 
     let mut interpreter2 = Interpreter::new();
-    interpreter2.run("var x 30 var y 10 add x y print x end");
+    interpreter2.run("var x 30 var y 10 add x y print x end")?;
 
     let mut interpreter3 = Interpreter::new();
     let source = "var x 30 
@@ -21,7 +21,7 @@ fn main() {
                   add x z
                   print x
                   end";
-    interpreter3.run(source);
+    interpreter3.run(source)?;
 
     let mut interpreter4 = Interpreter::new();
     let source1 = "
@@ -33,7 +33,7 @@ fn main() {
             end
         end
     ";
-    interpreter4.run(source1);
+    interpreter4.run(source1)?;
 
     let mut interpreter5 = Interpreter::new();
     let source2 = "
@@ -49,7 +49,7 @@ fn main() {
             end
         end
     ";
-    interpreter5.run(source2);
+    interpreter5.run(source2)?;
 
     let mut interpreter6 = Interpreter::new();
     let source3 = "
@@ -57,7 +57,7 @@ fn main() {
           1 2 3 4 5 
         print arr
     ";
-    interpreter6.run(source3);
+    interpreter6.run(source3)?;
     println!("///////////////////////////");
     let mut interpreter7 = Interpreter::new();
     let source4 = "
@@ -65,14 +65,14 @@ fn main() {
         sqrt x
         print x
     ";
-    interpreter7.run(source4);
+    interpreter7.run(source4)?;
     println!("///////////////////////////");
     let mut interpreter8 = Interpreter::new();
     let source5 = "
         string x hello, world endstring
         print x
     ";
-    interpreter8.run(source5);
+    interpreter8.run(source5)?;
     println!("///////////////////////////");
     let mut interpreter9 = Interpreter::new();
     let source6 = "
@@ -83,7 +83,7 @@ fn main() {
         add_f x y
         print x
     ";
-    interpreter9.run(source6);
+    interpreter9.run(source6)?;
     println!("///////////////////////////");
     let mut interpreter10 = Interpreter::new();
     let source7 = "
@@ -93,7 +93,7 @@ fn main() {
         end
         call sum 10
     ";
-    interpreter10.run(source7);
+    interpreter10.run(source7)?;
     println!("///////////////////////////");
     let mut interpreter11 = Interpreter::new();
     let source8 = "
@@ -104,5 +104,7 @@ fn main() {
         endstruct
         print point
     ";
-    interpreter11.run(source8);
+    interpreter11.run(source8)?;
+
+    Ok(())
 }
