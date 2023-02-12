@@ -1,0 +1,3 @@
+var x 36
+sqrt x
+print x
