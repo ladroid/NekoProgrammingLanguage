@@ -1,0 +1,6 @@
+struct point3d
+    x 1
+    y 2
+    z 3
+endstruct
+print point3d

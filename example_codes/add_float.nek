@@ -1,0 +1,6 @@
+float x 10.34
+print x
+float y 23.15
+print y
+add_f x y
+print x

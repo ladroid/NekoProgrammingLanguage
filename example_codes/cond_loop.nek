@@ -1,0 +1,11 @@
+var x 10
+var y 5
+var z 1
+if x > 5
+    add x y
+end
+loop x < 20
+    print x
+    add x z
+    end
+end

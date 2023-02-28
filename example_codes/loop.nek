@@ -1,0 +1,7 @@
+var x 0
+var y 1
+loop x < 5
+    print x
+    add x y
+    end
+end
