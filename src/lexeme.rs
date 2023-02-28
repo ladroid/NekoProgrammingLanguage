@@ -24,6 +24,7 @@ pub enum Lexeme {
     DivF,
     ABS,
     POW,
+    Switch,
 }
 
 impl Lexeme {
@@ -54,6 +55,7 @@ impl Lexeme {
             "div_f" => Lexeme::DivF,
             "abs" => Lexeme::ABS,
             "pow" => Lexeme::POW,
+            "switch" => Lexeme::Switch,
             _ => panic!("Invalid lexeme: {}", s),
         }
     }

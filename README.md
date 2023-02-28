@@ -96,6 +96,22 @@ Neko has a Assembly like syntax, supports variable bindings, mathematical operat
   print point
   ```
 
+* Switch case
+
+  ```java
+  var x 5
+  var y 6
+  switch x
+    case 1
+      print y
+    case 5
+      print x
+  ```
+
+## Neko and WASM
+
+ToDo
+
 ## ToDo List
 
 ❎ Improving functions make it as type based functions and improve setting parameters

@@ -146,6 +146,55 @@ impl<T: Write> Interpreter<T> {
                     }
                     self.structs.insert(name.to_owned(), struct_fields);
                 }
+                Lexeme::Switch => {
+                    let name = source.next().unwrap();
+                    let value = self.variables[name];
+                    let mut found = false;
+                    while let Some(word) = source.next() {
+                        if word == "endswitch" {
+                            break;
+                        }
+                        if found {
+                            continue;
+                        }
+                        if word == "case" {
+                            let case_value = source.next().unwrap().parse().unwrap();
+                            if value == case_value {
+                                found = true;
+                                while let Some(word) = source.next() {
+                                    if word == "break" {
+                                        break;
+                                    }
+                                    match word {
+                                        "print" => {
+                                            let name = source.next().unwrap();
+                                            match self.variables.get(name) {
+                                                Some(value) => println!("{}", value),
+                                                None => match self.arrays.get(name) {
+                                                    Some(array) => {
+                                                        for (index, &value) in
+                                                            array.iter().enumerate()
+                                                        {
+                                                            println!(
+                                                                "{}[{}] = {}",
+                                                                name, index, value
+                                                            );
+                                                        }
+                                                    }
+                                                    None => match self.float.get(name) {
+                                                        Some(value) => println!("{}", value),
+                                                        None => println!("{}", self.strings[name]),
+                                                    },
+                                                },
+                                            }
+                                        }
+                                        _ => continue,
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 Lexeme::Print => {
                     let name = source.next().unwrap();
                     match self.variables.get(name) {
